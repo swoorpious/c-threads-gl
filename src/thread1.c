@@ -1,3 +1,4 @@
+// copyright 2026 swaroop.
 #include "core.h"
 #include <pthread.h>
 #include "thread1.h"
@@ -26,9 +27,9 @@ void* someFunc(void* args) {
     return t;
 }
 
-int main() {
-    printf("running LearningThreads\n");
-    
+int main(int argc, char* argv[]) {
+    printf("running executable: %s\n\n", argv[0]);
+
     timeStamp mainThreadTime;
     struct timespec mainThreadTS;
     // mainThread start time
