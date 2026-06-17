@@ -13,6 +13,29 @@ add_executable(ProducerConsumer
     "${CMAKE_CURRENT_SOURCE_DIR}/src/producer_consumer.c"
 )
 
+# four_shaders
+add_executable(FourShaders 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/render_setup.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/render_data.c"
+)
+
+add_subdirectory(external/glfw)
+add_library(glad external/glad/src/gl.c)
+target_include_directories(glad PUBLIC external/glad/include)
+
+target_link_directories(FourShaders PRIVATE
+    external/glfw/src/
+)
+target_include_directories(FourShaders PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include/"
+)
+target_link_libraries(FourShaders glfw glad opengl32 dwmapi)
+
+target_compile_definitions(FourShaders PRIVATE
+        $<$<CONFIG:Debug>:BUILD_PROFILE_DEBUG>
+        $<$<CONFIG:Release>:BUILD_PROFILE_RELEASE>
+)
 
 include_directories(${PROJECT_NAME} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
