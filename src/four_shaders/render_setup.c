@@ -1,10 +1,10 @@
 // copyright 2026 swaroop.
 #include "core.h"
-#include "render_core.h"
+#include "glad_impl.h"
 #include "render_setup.h"
 #include <stddef.h>
 
-void setupWindows(WindowData* win_data) {
+void setupWindows(WindowView* win_data) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -18,19 +18,19 @@ void setupWindows(WindowData* win_data) {
     for (int i = 0; i < NUM_WINDOWS; i++) {
         char title[32];
         snprintf(title, sizeof(title), "Shader %02d", i + 1);
-
-        GLFWwindow *shared = (i == 0) ? NULL : win_data->windows[0];
-        win_data->windows[i] = glfwCreateWindow(win_data->width, win_data->height, title, NULL, shared);
-        if (!win_data->windows[i]) {
+ 
+        WindowData *curr = &win_data->windows[i];
+        GLFWwindow *shared = (i == 0) ? NULL : win_data->windows[0].win;
+        curr->win = glfwCreateWindow(win_data->width, win_data->height, title, NULL, shared);
+        if (!curr->win) {
             fprintf(stderr, "failed to open GLFW window.\n");
             glfwTerminate();
             exit(EXIT_FAILURE);
         }
 
-            
-        glfwMakeContextCurrent(win_data->windows[i]);
+        glfwMakeContextCurrent(curr->win);
         gladLoadGL((GLADloadfunc)glfwGetProcAddress);
-        setupQuad(&win_data->quads[i]);
+        setupQuad(&curr->quad);
     }
     
     glfwMakeContextCurrent(NULL);

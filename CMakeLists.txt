@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(LearningThreads)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_STANDARD 17)
 
 # thread1
 add_executable(Thread1 
@@ -18,6 +18,7 @@ add_executable(FourShaders
     "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/render_setup.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/render_data.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/thread_pool.c"
 )
 
 add_subdirectory(external/glfw)

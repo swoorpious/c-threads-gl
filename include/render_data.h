@@ -3,6 +3,7 @@
 #ifndef RENDER_DATA_H
 #define RENDER_DATA_H
 
+
 extern float vertices[];
 extern unsigned int indices[];
 

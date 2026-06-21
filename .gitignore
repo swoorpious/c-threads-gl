@@ -1,6 +1,7 @@
 .vs/
 .idea/
 external/
+else/
 
 # Prerequisites
 *.d

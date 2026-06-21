@@ -1,36 +1,95 @@
 // copyright 2026 swaroop.
 #include "core.h"
-#include "GLFW/glfw3.h"
 #include "render_setup.h"
 #include <getopt.h>
+#include "thread_pool.h"
 
-void parseArgs(WindowData *win, int argc, char *argv[]) {
-    static struct option long_options[] = {
-        {"width",  required_argument, 0, 'w'},
-        {"height", required_argument, 0, 'h'},
-        {0, 0, 0, 0}
-    };
 
-    int opt;
-    while ((opt = getopt_long(argc, argv, "w:h:", long_options, NULL)) != -1) {
-        switch (opt) {
-        case 'w': win->width = clamp(atoi(optarg), 640, 7680); break;
-        case 'h': win->height = clamp(atoi(optarg), 480, 4320); break;
-        default: ;
-        }
-    }
-}
 
 int main(int argc, char* argv[]) {
     printf("running executable: %s\n\n", argv[0]);
 
     if (!glfwInit()) { fprintf(stderr, "failed to init GLFW\n"); exit(EXIT_FAILURE); }
 
-    WindowData win_data;
-    win_data.width = 640;
-    win_data.height = 480;
-    parseArgs(&win_data, argc, argv);
-    setupWindows(&win_data);
+    ProgArgs conf;
+    parseArgs(&conf, argc, argv);
+
+    WindowView winView;
+    winView.width = conf.width;
+    winView.height = conf.height;
+    setupWindows(&winView);
+
+    // thread group
+    RenderThreadGroup rtg = {0};
+    setupThreads(&rtg, &winView);
+    pthread_t rendererThread;
+
+    RendererContextGroup context = {
+        .progArgs = &conf,
+        .rtGroup = &rtg,
+    };
+    pthread_create(&rendererThread, NULL, rendererWorker, &context);
+
+    // poll for other window related events
+    while (!atomic_load(&rtg.all_should_close)) glfwWaitEvents();
     
+    glfwTerminate();
     
+}
+
+
+void parseArgs(ProgArgs *args, int argc, char *argv[]) {
+    static struct option long_options[] = {
+        {"width", required_argument, 0, 'w'},
+        {"height", required_argument, 0, 'h'},
+        {"render_mode", required_argument, 0, 'r'},
+        {"fps", required_argument, 0, 'f'},
+        {"duration", required_argument, 0, 'd'},
+        {"frames", required_argument, 0, 'n'},
+        // shorthands
+        {"tf", required_argument, 0, 'n'},
+        {"td", required_argument, 0, 'd'},
+        {0, 0, 0, 0}
+    };
+
+    // defaults
+    args->width = 640;
+    args->height = 480;
+    args->targetFps = 60;
+    args->targetDuration = 10;
+    args->targetFrames = 600;
+    args->targetRenderMode = SetDurationAtSetFPS;
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, "w:h:r:f:d:n:", long_options, NULL)) != -1) {
+        switch (opt) {
+        case 'w': args->width = clamp(atoi(optarg), 640, 7680);  break;
+        case 'h': args->height = clamp(atoi(optarg), 480, 4320);  break;
+        case 'f': args->targetFps = clamp(atoi(optarg), 1, 240);   break;
+        case 'd': args->targetDuration = clamp(atoi(optarg), 1, 3600);  break;
+        case 'n': args->targetFrames = clamp(atoi(optarg), 1, 216000);break;
+        case 'r':
+            if (atoi(optarg) == 0) args->targetRenderMode = SetDurationAtSetFPS;
+            else if (atoi(optarg) == 1) args->targetRenderMode = SetFramesAtSetFPS;
+            else fprintf(stderr, "unknown render mode: %s\n", optarg);
+            break;
+        case '?':
+            fprintf(stderr, "unknown option, usage:\n"
+                "  --width/-w      window width  (640-7680)\n"
+                "  --height/-h     window height (480-4320)\n"
+                "  --fps/-f        target fps    (1-240)\n"
+                "  --duration/-d   duration secs (1-3600)\n"
+                "  --frames/-n     target frames (1-216000)\n"
+                "  --render_mode/-r 0=duration 1=frames\n"
+                "  shorthands: --tf=frames --td=duration\n");
+            break;
+        default: break;
+        }
+    }
+
+    // derive missing values based on render mode
+    if (args->targetRenderMode == SetDurationAtSetFPS)
+        args->targetFrames = args->targetDuration * args->targetFps;
+    else
+        args->targetDuration = args->targetFrames / args->targetFps;
 }
