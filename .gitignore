@@ -1,6 +1,7 @@
 .vs/
 .idea/
-external/
+external/*
+!external/glad/
 else/
 
 # Prerequisites
