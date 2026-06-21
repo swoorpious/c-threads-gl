@@ -2,7 +2,6 @@
 #include "core.h"
 #include "glad_impl.h"
 #include "render_setup.h"
-#include <stddef.h>
 
 void setupWindows(WindowView* win_data) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

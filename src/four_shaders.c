@@ -1,6 +1,6 @@
 // copyright 2026 swaroop.
 #include "core.h"
-#include "render_setup.h"
+#include "four_shaders/render/render_setup.h"
 #include <getopt.h>
 #include "thread_pool.h"
 

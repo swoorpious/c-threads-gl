@@ -5,7 +5,6 @@
 
 #include "core.h"
 #include <GLFW/glfw3.h>
-#include <unistd.h>
 #include <time.h>
 
 

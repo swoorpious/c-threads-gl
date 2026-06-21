@@ -5,7 +5,7 @@
 #define THREAD_POOL_H
 
 // #include "core.h"
-#include "render_setup.h"
+#include "render/render_setup.h"
 #include "pthread.h"
 #include "stdatomic.h"
 #include "program_args.h"

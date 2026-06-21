@@ -14,11 +14,10 @@ add_executable(ProducerConsumer
 )
 
 # four_shaders
+file(GLOB_RECURSE FS_SOURCES_C CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/*.c")
 add_executable(FourShaders 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/render_setup.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/render_data.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/thread_pool.c"
+    ${FS_SOURCES_C}
 )
 
 add_subdirectory(external/glfw)
@@ -30,6 +29,7 @@ target_link_directories(FourShaders PRIVATE
 )
 target_include_directories(FourShaders PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include/"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/"
 )
 target_link_libraries(FourShaders glfw glad opengl32 dwmapi)
 
