@@ -31,11 +31,13 @@ target_include_directories(FourShaders PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include/"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/"
 )
-target_link_libraries(FourShaders glfw glad opengl32 dwmapi)
 
+target_link_libraries(FourShaders glfw glad opengl32 dwmapi)
 target_compile_definitions(FourShaders PRIVATE
         $<$<CONFIG:Debug>:BUILD_PROFILE_DEBUG>
+        $<$<CONFIG:Debug>:RESOURCE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/">
         $<$<CONFIG:Release>:BUILD_PROFILE_RELEASE>
+        $<$<CONFIG:Release>:RESOURCE_PATH="./resources/">
 )
 
 include_directories(${PROJECT_NAME} PUBLIC
@@ -47,8 +49,6 @@ include_directories(${PROJECT_NAME} PUBLIC
 #file(GLOB_RECURSE PROJECT_SOURCES_C CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
 #file(GLOB_RECURSE PROJECT_SOURCES_CPP CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
-#target_compile_definitions(Thread1 PUBLIC RESOURCE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
-#target_compile_definitions(Thread1 PUBLIC RESOURCE_PATH="./resources/")
 
 # copy resources if they are different to build directory
 #add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

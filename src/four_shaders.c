@@ -5,6 +5,11 @@
 #include "thread_pool.h"
 
 
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+}
 
 int main(int argc, char* argv[]) {
     printf("running executable: %s\n\n", argv[0]);
@@ -13,25 +18,16 @@ int main(int argc, char* argv[]) {
 
     ProgArgs conf;
     parseArgs(&conf, argc, argv);
+    
+    // glfwMakeContextCurrent(NULL);
+    RenderContext ctx;
+    setupRenderContext(&ctx, &conf);
+    setupThreads(&ctx, &conf);
 
-    WindowView winView;
-    winView.width = conf.width;
-    winView.height = conf.height;
-    setupWindows(&winView);
-
-    // thread group
-    RenderThreadGroup rtg = {0};
-    setupThreads(&rtg, &winView);
-    pthread_t rendererThread;
-
-    RendererContextGroup context = {
-        .progArgs = &conf,
-        .rtGroup = &rtg,
-    };
-    pthread_create(&rendererThread, NULL, rendererWorker, &context);
+    glfwSetKeyCallback(ctx.win, keyCallback);
 
     // poll for other window related events
-    while (!atomic_load(&rtg.all_should_close)) glfwWaitEvents();
+    while (!glfwWindowShouldClose(ctx.win)) glfwWaitEvents();
     
     glfwTerminate();
     

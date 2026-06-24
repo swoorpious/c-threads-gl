@@ -5,6 +5,19 @@
 
 typedef enum {
     /*
+     * both modes eventually operate on strict set deltaTime values
+     * 
+     * SetDurationAtSetFPS: duration in seconds.
+     * targetFramesToRender = duration * fps
+     * render targetFramesToRender at set deltaTime
+     *
+     * SetFramesAtSetFPS
+     * render frames at set deltaTime
+     *
+     * deltaTime = 1000 / fps;
+     */
+    
+    /*
      * default render mode
      * default duration: 10s
      * default fps: 60 (16.67ms)
