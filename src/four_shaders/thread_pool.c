@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <time.h>
 
+
 typedef struct {
     int renderedFrames[NUM_SHADERS];
     // long double renderedDurations[NUM_SHADERS];
@@ -31,6 +32,8 @@ void* rendererWorker(void* arg) {
     RenderProgress progress = {0};
     const ProgArgs* conf = rcg->progArgs;
 
+    free(rcg);
+
     // also target deltaTime
     const double targetFrametime = 1000.0 / (double)conf->targetFps;
     double lastFrameTime = glfwGetTime() * 1000.0;
@@ -50,22 +53,25 @@ void* rendererWorker(void* arg) {
 
     // render loop
     glfwMakeContextCurrent(ctx->win);
-    while (progress.rendersCompleted < NUM_SHADERS || glfwWindowShouldClose(ctx->win)) {
+    while (progress.rendersCompleted < NUM_SHADERS) {
+        if (glfwWindowShouldClose(ctx->win)) break;
         // obtained deltaTime
         const double now = glfwGetTime() * 1000.0;
         if (now - lastFrameTime < targetFrametime) continue;
         lastFrameTime = now;
 
+        glClearColor(0.f, 0.0f, 0.f, 0.5f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
         RenderProgress* p = &progress;
-        for (int i = 0; i < NUM_SHADERS; i++) {
+        for (int i = 0; i < 1 /* NUM_SHADERS */; i++) {
             if (p->renderedFrames[i] < p->targetFramesToRender) {
                 int nextFrame = ++p->targetFramesToRender;
                 // renderFrame(nextFrame);
+                renderProgram(ctx, i);
             }
         }
 
-        glClearColor(0.f, 0.0f, 0.f, 0.5f);
-        glClear(GL_COLOR_BUFFER_BIT);
         glfwSwapBuffers(ctx->win);
 
         // dispatchThreads(rtg);
@@ -79,14 +85,15 @@ void* rendererWorker(void* arg) {
 }
 
 void setupThreads(RenderContext* ctx, ProgArgs* conf) {
-    pthread_t rendererThread;
+    RendererContextGroup *grp = malloc(sizeof(RendererContextGroup));
+    grp->ctx = ctx;
+    grp->progArgs = conf;
+    pthread_create(&ctx->renderThread, NULL, rendererWorker, grp);
 
-    RendererContextGroup context = {
-        .ctx = ctx,
-        .progArgs = conf,
-    };
-    pthread_create(&rendererThread, NULL, rendererWorker, &context);
+}
 
+void closeThreads(RenderContext* ctx) {
+    pthread_join(ctx->renderThread, NULL);
 }
 
 // void* renderThreadWorker(void* arg) {

@@ -38,6 +38,7 @@ void *rendererWorker(void *arg);
 void *renderThreadWorker(void *arg);
 
 void setupThreads(RenderContext *ctx, ProgArgs *conf);
+void closeThreads(RenderContext *ctx);
 // void dispatchThreads(RenderThreadGroup *threadGroup);
 // void waitThreads(RenderThreadGroup *threadGroup);
 // void destroyThreads(RenderThreadGroup *threadGroup);

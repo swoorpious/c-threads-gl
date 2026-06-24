@@ -7,6 +7,8 @@
 #include "program_args.h"
 #include "GLFW/glfw3.h"
 #include "render_data.h"
+#include "shader_utils.h"
+#include "pthread.h"
 
 #define NUM_WINDOWS 4
 #define NUM_SHADERS 4
@@ -14,10 +16,10 @@
 #define DEFAULT_WINDOW_HEIGHT 480
 
 
-
 typedef struct {
     GLFWwindow* win;
     Quad quad; // main window quad
+    pthread_t renderThread;
 
     int winHeight;
     int winWidth;
@@ -25,10 +27,8 @@ typedef struct {
     int renderWidth;
 
     // raw shader strings will be freed once all shaders are compiled
-    char *rawVertShaders[NUM_SHADERS];
-    char *rawFragShaders[NUM_SHADERS];
-    GLuint compiledVertShaders[NUM_SHADERS];
-    GLuint compiledFragShaders[NUM_SHADERS];
+    ShaderGroup shaderGroups[NUM_SHADERS];
+    GLuint glProgs[NUM_SHADERS];
     GLuint fbos[NUM_SHADERS];
     GLuint fullTex[NUM_SHADERS];
     /*
@@ -37,12 +37,12 @@ typedef struct {
      */
     GLuint previewTex[NUM_SHADERS];
     
-    
     GLuint compositeProg;
 } RenderContext;
 
 
 void setupRenderContext(RenderContext *ctx, ProgArgs *args);
+void renderProgram(RenderContext *ctx, int index);
 
 
 #endif //RENDER_SETUP_H

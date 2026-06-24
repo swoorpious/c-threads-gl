@@ -15,6 +15,7 @@ add_executable(ProducerConsumer
 
 # four_shaders
 file(GLOB_RECURSE FS_SOURCES_C CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders/*.c")
+message(STATUS "Sources: ${FS_SOURCES_C}")
 add_executable(FourShaders 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/four_shaders.c"
     ${FS_SOURCES_C}

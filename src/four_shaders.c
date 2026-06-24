@@ -1,6 +1,7 @@
 // copyright 2026 swaroop.
 #include "core.h"
 #include "four_shaders/render/render_setup.h"
+#include "program_args.h"
 #include <getopt.h>
 #include "thread_pool.h"
 
@@ -14,23 +15,33 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode
 int main(int argc, char* argv[]) {
     printf("running executable: %s\n\n", argv[0]);
 
+#ifdef BUILD_PROFILE_DEBUG
+    for (int i = 0; i< argc; i++)
+        printf("argv[%d] = %s\n", i, argv[i]);
+#endif
+    
     if (!glfwInit()) { fprintf(stderr, "failed to init GLFW\n"); exit(EXIT_FAILURE); }
 
-    ProgArgs conf;
+    ProgArgs conf = {0};
     parseArgs(&conf, argc, argv);
-    
+
     // glfwMakeContextCurrent(NULL);
-    RenderContext ctx;
+    RenderContext ctx = {0};
     setupRenderContext(&ctx, &conf);
     setupThreads(&ctx, &conf);
 
     glfwSetKeyCallback(ctx.win, keyCallback);
 
     // poll for other window related events
-    while (!glfwWindowShouldClose(ctx.win)) glfwWaitEvents();
+    while (1) {
+        if (glfwWindowShouldClose(ctx.win)) {
+            closeThreads(&ctx);
+            break;
+        }
+        glfwWaitEvents();
+    }
     
     glfwTerminate();
-    
 }
 
 
