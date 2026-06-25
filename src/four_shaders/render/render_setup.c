@@ -74,7 +74,6 @@ void setupRenderContext(RenderContext* ctx, ProgArgs* args) {
     ctx->renderHeight = args->height;
 
     setupWindow(ctx);
-
 }
 
 static void drawQuad(Quad* quad) {
@@ -85,5 +84,9 @@ static void drawQuad(Quad* quad) {
 
 void renderProgram(RenderContext* ctx, const int index) {
     glUseProgram(ctx->glProgs[index]);
+    glUniform1f(glGetUniformLocation(ctx->glProgs[index], "uTime"), (float)glfwGetTime());
+    glUniform2f(
+        glGetUniformLocation(ctx->glProgs[index], "uResolution"),
+        (float)ctx->renderWidth, (float)ctx->renderHeight);
     drawQuad(&ctx->quad);
 }
