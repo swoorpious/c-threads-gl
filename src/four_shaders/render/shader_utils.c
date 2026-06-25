@@ -17,8 +17,16 @@ static char* loadFile(const char* path) {
     rewind(file);
     fread(buffer, 1, file_size, file);
     fclose(file);
-
     buffer[file_size] = '\0';
+
+    long write = 0;
+    for (int i = 0; i < file_size; i++) {
+        const unsigned long c = (unsigned long)buffer[i];
+        if (c == '\n' || c == '\r' || c == '\0' || (c >= 32 && c <= 126))
+            buffer[write++] = buffer[i];
+    }
+    buffer[write] = '\0';
+
     return buffer;
 }
 
@@ -42,6 +50,10 @@ static void parseShaderGroup(ShaderGroup* grp) {
     char* line = strtok(grp->raw, "\n");
 
     while (line) {
+        size_t len = strlen(line);
+        if (len > 0 && line[len - 1] == '\r')
+            line[len - 1] = '\0';
+
         if (strcmp(line, "#shader VERTEX") == 0) shaderType = Vertex;
         else if (strcmp(line, "#shader FRAGMENT") == 0) shaderType = Fragment;
 
@@ -87,6 +99,7 @@ static GLuint compileShader(GLenum type, const char* src) {
 
 void loadShader(const char* shaderPath, ShaderGroup* grp) {
     char* fileData = loadFile(shaderPath);
+    printf("[loadShader] %s\n", fileData);
     grp->raw = fileData;
     parseShaderGroup(grp);
 

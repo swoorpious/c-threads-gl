@@ -4,9 +4,7 @@
 #include <math.h>
 
 #include "core.h"
-#include <GLFW/glfw3.h>
 #include <time.h>
-
 
 typedef struct {
     int renderedFrames[NUM_SHADERS];
@@ -53,6 +51,13 @@ void* rendererWorker(void* arg) {
 
     // render loop
     glfwMakeContextCurrent(ctx->win);
+    gladLoadGL((GLADloadfunc)glfwGetProcAddress); 
+
+    char* p = getPathTo("shaders/screen_coords.shader");
+    loadShader(p, &ctx->shaderGroups[0]);
+    free(p);
+    ctx->glProgs[0] = createProgram(&ctx->shaderGroups[0]);
+
     while (progress.rendersCompleted < NUM_SHADERS) {
         if (glfwWindowShouldClose(ctx->win)) break;
         // obtained deltaTime
@@ -66,7 +71,10 @@ void* rendererWorker(void* arg) {
         RenderProgress* p = &progress;
         for (int i = 0; i < 1 /* NUM_SHADERS */; i++) {
             if (p->renderedFrames[i] < p->targetFramesToRender) {
-                int nextFrame = ++p->targetFramesToRender;
+                p->renderedFrames[i]++;
+                int nextFrame = p->renderedFrames[i];
+                if (p->renderedFrames[i] >= p->targetFramesToRender)
+                    p->rendersCompleted++;
                 // renderFrame(nextFrame);
                 renderProgram(ctx, i);
             }

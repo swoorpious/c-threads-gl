@@ -4,8 +4,11 @@
 #ifndef RENDER_SETUP_H
 #define RENDER_SETUP_H
 
+#include "render/render_core.h"
+
 #include "program_args.h"
-#include "GLFW/glfw3.h"
+// #include "GLFW/glfw3.h"
+
 #include "render_data.h"
 #include "shader_utils.h"
 #include "pthread.h"

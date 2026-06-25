@@ -68,16 +68,6 @@ static void setupWindow(RenderContext* ctx) {
     glfwMakeContextCurrent(NULL);
 }
 
-static char* getPathTo(const char* path) {
-    size_t len = strlen(RESOURCE_PATH) + strlen(path) + 1;
-
-    char* result = malloc(len);
-    if (!result)
-        return NULL;
-
-    snprintf(result, len, "%s%s", RESOURCE_PATH, path);
-    return result;
-}
 
 void setupRenderContext(RenderContext* ctx, ProgArgs* args) {
     ctx->renderWidth = args->width;
@@ -85,15 +75,6 @@ void setupRenderContext(RenderContext* ctx, ProgArgs* args) {
 
     setupWindow(ctx);
 
-    char* p = getPathTo("shaders/screen_coords.shader");
-    loadShader(p, &ctx->shaderGroups[0]);
-    free(p);
-
-    ctx->glProgs[0] = createProgram(&ctx->shaderGroups[0]);
-
-    /*
-     * add shaders etc 
-     */
 }
 
 static void drawQuad(Quad* quad) {
