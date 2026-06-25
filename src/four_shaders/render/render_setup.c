@@ -22,6 +22,12 @@ static void setupQuad(Quad* quad) {
     glBindVertexArray(0);
 }
 
+static void framebufferSizeCallback(GLFWwindow* win, int width, int height) {
+    RenderContext *ctx = (RenderContext *)glfwGetWindowUserPointer(win);
+    atomic_store(&ctx->winWidth, width);
+    atomic_store(&ctx->winHeight, height);
+    atomic_store(&ctx->isResized, 1);
+}
 
 static void setupWindow(RenderContext* ctx) {
     GLFWmonitor* mon = glfwGetPrimaryMonitor();
@@ -33,6 +39,7 @@ static void setupWindow(RenderContext* ctx) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_DEPTH_BITS, 16);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+    
 
     /*
      * - set window maximized if requested render height for a single shader is
@@ -59,6 +66,9 @@ static void setupWindow(RenderContext* ctx) {
     glfwMakeContextCurrent(ctx->win);
     gladLoadGL((GLADloadfunc)glfwGetProcAddress);
     setupQuad(&ctx->quad);
+    glfwSetWindowUserPointer(ctx->win, ctx);
+    glfwSetFramebufferSizeCallback(ctx->win, framebufferSizeCallback);
+    glfwSetWindowSizeLimits(ctx->win, 800, 600, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
 #ifndef BUILD_PROFILE_DEBUG
     // glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);

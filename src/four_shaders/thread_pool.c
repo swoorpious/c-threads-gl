@@ -60,6 +60,13 @@ void* rendererWorker(void* arg) {
 
     while (progress.rendersCompleted < NUM_SHADERS) {
         if (glfwWindowShouldClose(ctx->win)) break;
+
+        // handle resize
+        if (atomic_load(&ctx->isResized)) {
+            glViewport(0, 0, atomic_load(&ctx->winWidth), atomic_load(&ctx->winHeight));
+            atomic_store(&ctx->isResized, 0);
+        }
+        
         // obtained deltaTime
         const double now = glfwGetTime() * 1000.0;
         if (now - lastFrameTime < targetFrametime) continue;

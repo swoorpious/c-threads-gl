@@ -7,8 +7,7 @@
 #include "render/render_core.h"
 
 #include "program_args.h"
-// #include "GLFW/glfw3.h"
-
+#include <stdatomic.h>
 #include "render_data.h"
 #include "shader_utils.h"
 #include "pthread.h"
@@ -24,10 +23,11 @@ typedef struct {
     Quad quad; // main window quad
     pthread_t renderThread;
 
-    int winHeight;
-    int winWidth;
+    _Atomic(int) winHeight;
+    _Atomic(int) winWidth;
     int renderHeight;
     int renderWidth;
+    _Atomic(int) isResized;
 
     // raw shader strings will be freed once all shaders are compiled
     ShaderGroup shaderGroups[NUM_SHADERS];
