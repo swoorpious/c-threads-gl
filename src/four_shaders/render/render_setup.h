@@ -44,8 +44,17 @@ typedef struct {
 } RenderContext;
 
 
+void addShader(
+    RenderContext *ctx,
+    const char *path,
+    // function pointers
+    FuncSetupInitParams setupInit,
+    FuncSetupDispatchParams setupDispatch,
+    void *initParams,
+    void *dispatchParams
+);
 void setupRenderContext(RenderContext *ctx, ProgArgs *args);
-void renderProgram(RenderContext *ctx, int index);
+void renderProgram(RenderContext *ctx, int index, double deltaTime);
 
 
 #endif //RENDER_SETUP_H

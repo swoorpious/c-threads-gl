@@ -23,7 +23,7 @@ static void setupQuad(Quad* quad) {
 }
 
 static void framebufferSizeCallback(GLFWwindow* win, int width, int height) {
-    RenderContext *ctx = (RenderContext *)glfwGetWindowUserPointer(win);
+    RenderContext* ctx = (RenderContext*)glfwGetWindowUserPointer(win);
     atomic_store(&ctx->winWidth, width);
     atomic_store(&ctx->winHeight, height);
     atomic_store(&ctx->isResized, 1);
@@ -40,6 +40,7 @@ static void setupWindow(RenderContext* ctx) {
     glfwWindowHint(GLFW_DEPTH_BITS, 16);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
     
+
 
     /*
      * - set window maximized if requested render height for a single shader is
@@ -74,10 +75,49 @@ static void setupWindow(RenderContext* ctx) {
     // glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 #endif
 
-    // we need to make current context null before the render thread sets it
-    glfwMakeContextCurrent(NULL);
+    // keeping context current on main thread
+    //
+    // main thread must make current context null before render thread makes it current
 }
 
+
+void addShader(
+    RenderContext* ctx, const char* path,
+    const FuncSetupInitParams setupInit,
+    const FuncSetupDispatchParams setupDispatch,
+    void* initParams, void* dispatchParams) {
+    
+    int addIndex = -1;
+    int added = 0;
+    for (int i = 0; i < NUM_SHADERS; i++) {
+        if (!ctx->shaderGroups[i].shaderPath) {
+            addIndex = i;
+            added = 1;
+            break;
+        }
+        
+    }
+    if (!added) {
+        perror("unable to add shader. exceeding shader capacity.");
+        return;
+    }
+
+    ShaderGroup *curr = &ctx->shaderGroups[addIndex];
+    curr->shaderPath = path;
+    curr->setupInitParams = setupInit ? setupInit : &defaultSetupInitParams;
+    curr->setupDispatchParams = setupDispatch ? setupDispatch : &defaultSetupDispatchParams;
+    curr->initParams = initParams ? initParams : NULL;
+    curr->dispatchParams = dispatchParams ? dispatchParams : NULL;
+
+    char* p = getPathTo(path);
+    loadShader(p, curr);
+    free(p);
+
+    ctx->glProgs[addIndex] = createProgram(curr);
+
+    const int h = ctx->renderHeight, w = ctx->renderWidth;
+    curr->setupInitParams(ctx->glProgs[addIndex], h, w, initParams);
+}
 
 void setupRenderContext(RenderContext* ctx, ProgArgs* args) {
     ctx->renderWidth = args->width;
@@ -92,11 +132,11 @@ static void drawQuad(Quad* quad) {
     glBindVertexArray(0);
 }
 
-void renderProgram(RenderContext* ctx, const int index) {
-    glUseProgram(ctx->glProgs[index]);
-    glUniform1f(glGetUniformLocation(ctx->glProgs[index], "uTime"), (float)glfwGetTime());
-    glUniform2f(
-        glGetUniformLocation(ctx->glProgs[index], "uResolution"),
-        (float)ctx->renderWidth, (float)ctx->renderHeight);
+void renderProgram(RenderContext* ctx, const int index, const double deltaTime) {
+    const GLuint currProg = ctx->glProgs[index];
+    const ShaderGroup* currGrp = &ctx->shaderGroups[index];
+
+    glUseProgram(currProg);
+    currGrp->setupDispatchParams(currProg, deltaTime, currGrp->dispatchParams);
     drawQuad(&ctx->quad);
 }

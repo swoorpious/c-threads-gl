@@ -129,3 +129,16 @@ GLuint createProgram(const ShaderGroup* grp) {
 
     return program;
 }
+
+
+void defaultSetupInitParams(unsigned int prog, int height, int width, void* params) {
+    glUseProgram(prog);
+    glUniform2f(
+        glGetUniformLocation(prog, "uResolution"),
+        (float)width, (float)height);
+}
+void defaultSetupDispatchParams(unsigned int prog, double deltaTime, void* params) {
+    glUseProgram(prog);
+    glUniform1f(glGetUniformLocation(prog, "uTime"), deltaTime);
+    
+}

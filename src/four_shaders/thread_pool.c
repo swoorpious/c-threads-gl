@@ -33,8 +33,15 @@ void* rendererWorker(void* arg) {
     free(rcg);
 
     // also target deltaTime
-    const double targetFrametime = 1000.0 / (double)conf->targetFps;
-    double lastFrameTime = glfwGetTime() * 1000.0;
+    const double targetFrametime = 1.0 / (double)conf->targetFps; // s
+    double lastFrameTime = glfwGetTime(); // s
+
+    /*
+     * wait at most 8ms, or less for events only
+     * we render at targetFrameTime anyway, this is not used to render the frames
+    */
+    const double waitTime = __min(targetFrametime, 0.008f);
+    glfwWaitEventsTimeout(waitTime);
 
     // calc targetFramesToRender
     if (conf->targetRenderMode == SetDurationAtSetFPS) {
@@ -44,31 +51,25 @@ void* rendererWorker(void* arg) {
     else progress.targetFramesToRender = conf->targetFrames;
 
 
-    // wait at most 8ms, or less
-    // wait time for event polling
-    const double waitTime = (__min(targetFrametime, 8.0)) / 1000.f;
-    glfwWaitEventsTimeout(waitTime);
-
     // render loop
     glfwMakeContextCurrent(ctx->win);
     gladLoadGL((GLADloadfunc)glfwGetProcAddress); 
 
-    char* p = getPathTo("shaders/screen_coords.shader");
-    loadShader(p, &ctx->shaderGroups[0]);
-    free(p);
-    ctx->glProgs[0] = createProgram(&ctx->shaderGroups[0]);
-
+    
+    double timeAccumulated = 0.f;
     while (progress.rendersCompleted < NUM_SHADERS) {
         if (glfwWindowShouldClose(ctx->win)) break;
 
         // handle resize
         if (atomic_load(&ctx->isResized)) {
-            glViewport(0, 0, atomic_load(&ctx->winWidth), atomic_load(&ctx->winHeight));
+            int ww = atomic_load(&ctx->winWidth),
+                hh = atomic_load(&ctx->winHeight);
+            
+            glViewport(0, 0, ww, hh);
             atomic_store(&ctx->isResized, 0);
         }
-        
         // obtained deltaTime
-        const double now = glfwGetTime() * 1000.0;
+        const double now = glfwGetTime();
         if (now - lastFrameTime < targetFrametime) continue;
         lastFrameTime = now;
 
@@ -82,8 +83,9 @@ void* rendererWorker(void* arg) {
                 int nextFrame = p->renderedFrames[i];
                 if (p->renderedFrames[i] >= p->targetFramesToRender)
                     p->rendersCompleted++;
-                // renderFrame(nextFrame);
-                renderProgram(ctx, i);
+
+                renderProgram(ctx, i, timeAccumulated);
+                timeAccumulated += targetFrametime;
             }
         }
 
@@ -100,6 +102,7 @@ void* rendererWorker(void* arg) {
 }
 
 void setupThreads(RenderContext* ctx, ProgArgs* conf) {
+    // freed in thread worker
     RendererContextGroup *grp = malloc(sizeof(RendererContextGroup));
     grp->ctx = ctx;
     grp->progArgs = conf;
