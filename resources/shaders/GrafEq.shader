@@ -1,3 +1,11 @@
+// FRAGMENT SHADER CREDITS
+// source: https://www.shadertoy.com/view/Xs3GWj
+// author: [davidar](https://www.shadertoy.com/user/davidar)
+
+
+// this was the original shader that was included for testing
+// no header implementation file is included
+
 #shader VERTEX
 #version 330 core
 layout (location = 0) in vec2 aPos;

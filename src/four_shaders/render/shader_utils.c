@@ -54,6 +54,11 @@ static void parseShaderGroup(ShaderEntry* grp) {
         if (len > 0 && line[len - 1] == '\r')
             line[len - 1] = '\0';
 
+        if (strcmp(line, "//") == 0) {
+            line = strtok(NULL, "\n");
+            continue;
+        }
+        
         if (strcmp(line, "#shader VERTEX") == 0) shaderType = Vertex;
         else if (strcmp(line, "#shader FRAGMENT") == 0) shaderType = Fragment;
 

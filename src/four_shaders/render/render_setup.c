@@ -4,7 +4,8 @@
 #include "stdatomic.h"
 #include "render_setup.h"
 
-#include "shaders/composite_shader.h"
+#include "shaders/composite_shader_impl.h"
+#include "shaders/crude_shader_impl.h"
 
 static void setupQuad(Quad* quad) {
     glGenVertexArrays(1, &quad->vao);
@@ -149,28 +150,34 @@ void setupRenderContext(RenderContext* ctx, ProgArgs* args) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-    CompositeShaderParams *params_composite = malloc(sizeof(CompositeShaderParams));
-
-    // bind texture ids
-    for (int i = 0; i < 4; i++)
-        params_composite->tex[i] = ctx->fullTex[i];
+    CrudeShaderParams *params_crude = calloc(1, sizeof(CrudeShaderParams));
+    params_crude->texPath = getPathTo("textures/clay_roof_tiles_02_diff_1k.jpg");
     
-    addShader(ctx, "shaders/screen_coords.shader",
-        ShaderRolePattern,
-        NULL, NULL, NULL, NULL);    
-    addShader(ctx, "shaders/screen_coords.shader",
-        ShaderRolePattern,
-        NULL, NULL, NULL, NULL);    
-    addShader(ctx, "shaders/screen_coords.shader",
-        ShaderRolePattern,
-        NULL, NULL, NULL, NULL);    
-    addShader(ctx, "shaders/screen_coords.shader",
+    addShader(ctx, "shaders/BalatroBackground.shader",
         ShaderRolePattern,
         NULL, NULL, NULL, NULL);
-    
+    addShader(ctx, "shaders/Crude.shader",
+        ShaderRolePattern,
+        crudeSetupInitParams,
+        crudeSetupDispatchParams,
+        params_crude,
+        params_crude); // using the same params here cuz im lazy
+    addShader(ctx, "shaders/AbstractVortex.shader",
+        ShaderRolePattern,
+        NULL, NULL, NULL, NULL);
+    addShader(ctx, "shaders/fract113.shader",
+        ShaderRolePattern,
+        NULL, NULL, NULL, NULL);
+
+    CompositeShaderParams *params_composite = malloc(sizeof(CompositeShaderParams));
+    for (int i = 0; i < 4; i++) // bind texture ids
+        params_composite->tex[i] = ctx->fullTex[i];
+
     addShader(ctx, "shaders/composite.shader",
         ShaderRoleComposite,
-        NULL, NULL, NULL,
+        compositeSetupInitParams,
+        compositeSetupDispatchParams,
+        NULL,
         params_composite);
 }
 

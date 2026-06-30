@@ -1,3 +1,8 @@
+// VERTEX/FRAGMENT SHADER CREDITS
+// source: oooo it's me!! i am a noob but i wrote this!!
+// author: [swaroop.](https://github.com/swoorpious)
+
+
 #shader VERTEX
 #version 330 core
 layout (location = 0) in vec2 aPos;
