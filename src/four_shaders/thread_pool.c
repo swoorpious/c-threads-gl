@@ -77,22 +77,29 @@ void* rendererWorker(void* arg) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         RenderProgress* p = &progress;
-        for (int i = 0; i < 1 /* NUM_SHADERS */; i++) {
+        for (int i = 0; i < NUM_SHADERS; i++) {
             if (p->renderedFrames[i] < p->targetFramesToRender) {
                 p->renderedFrames[i]++;
                 int nextFrame = p->renderedFrames[i];
                 if (p->renderedFrames[i] >= p->targetFramesToRender)
                     p->rendersCompleted++;
 
-                renderProgram(ctx, i, timeAccumulated);
-                timeAccumulated += targetFrametime;
+                renderShaderProgram(ctx, i, timeAccumulated);
             }
+        }
+
+        /*
+         * add the composite shader
+         */
+        if (ctx->compositeIndex >= 0) {
+            renderCompositeProgram(ctx);
         }
 
         glfwSwapBuffers(ctx->win);
 
         // dispatchThreads(rtg);
         // waitThreads(rtg);
+        timeAccumulated += targetFrametime;
         glfwWaitEventsTimeout(waitTime);
     }
     // glfwMakeContextCurrent(NULL);

@@ -3,7 +3,11 @@
 #ifndef SHADER_UTILS_H
 #define SHADER_UTILS_H
 
-// #include "GLFW/glfw3.h"
+typedef enum {
+    ShaderRolePattern = 0,
+    ShaderRoleComposite = 1,
+} ShaderRole;
+
 typedef void (*FuncSetupInitParams)(
         unsigned int prog, // takes gl program from the RenderContext
         int height,
@@ -17,6 +21,7 @@ typedef void (*FuncSetupDispatchParams)(
         );
 typedef struct {
     const char *shaderPath;
+    ShaderRole role;
 
     FuncSetupInitParams setupInitParams;
     FuncSetupDispatchParams setupDispatchParams;
@@ -28,17 +33,15 @@ typedef struct {
     void *initParams;
     void *dispatchParams;
 
-    // buffer location
-    int uTime;
-    int uResolution;
-
     char *raw;
     char *vert;
     char *frag;
-
     unsigned int compiledVert;
     unsigned int compiledFrag;
-} ShaderGroup;
+
+    unsigned int prog;
+} ShaderEntry;
+
 
 void defaultSetupInitParams (
     unsigned int prog,
@@ -52,8 +55,8 @@ void defaultSetupDispatchParams (
     void *params
     );
 
-void loadShader(const char *shaderPath, ShaderGroup *grp);
-unsigned int createProgram(const ShaderGroup *grp);
+void loadShader(const char *shaderPath, ShaderEntry *grp);
+unsigned int createProgram(const ShaderEntry *grp);
 // void compileShaderGroup(ShaderGroup *grp);
 
 

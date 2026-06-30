@@ -28,7 +28,6 @@ int main(int argc, char* argv[]) {
     // glfwMakeContextCurrent(NULL);
     RenderContext ctx = {0};
     setupRenderContext(&ctx, &conf);
-    addShader(&ctx, "shaders/screen_coords.shader", NULL, NULL, NULL, NULL);
     glfwMakeContextCurrent(NULL);
     setupThreads(&ctx, &conf);
 

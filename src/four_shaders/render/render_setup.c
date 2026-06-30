@@ -1,7 +1,10 @@
 // copyright 2026 swaroop.
 #include "core.h"
 #include "glad_impl.h"
+#include "stdatomic.h"
 #include "render_setup.h"
+
+#include "shaders/composite_shader.h"
 
 static void setupQuad(Quad* quad) {
     glGenVertexArrays(1, &quad->vao);
@@ -66,6 +69,10 @@ static void setupWindow(RenderContext* ctx) {
 
     glfwMakeContextCurrent(ctx->win);
     gladLoadGL((GLADloadfunc)glfwGetProcAddress);
+    int fbw, fbh;
+    glfwGetFramebufferSize(ctx->win, &fbw, &fbh);
+    atomic_store(&ctx->winWidth, fbw);
+    atomic_store(&ctx->winHeight, fbh);
     setupQuad(&ctx->quad);
     glfwSetWindowUserPointer(ctx->win, ctx);
     glfwSetFramebufferSizeCallback(ctx->win, framebufferSizeCallback);
@@ -83,26 +90,13 @@ static void setupWindow(RenderContext* ctx) {
 
 void addShader(
     RenderContext* ctx, const char* path,
+    ShaderRole role,
     const FuncSetupInitParams setupInit,
     const FuncSetupDispatchParams setupDispatch,
     void* initParams, void* dispatchParams) {
     
-    int addIndex = -1;
-    int added = 0;
-    for (int i = 0; i < NUM_SHADERS; i++) {
-        if (!ctx->shaderGroups[i].shaderPath) {
-            addIndex = i;
-            added = 1;
-            break;
-        }
-        
-    }
-    if (!added) {
-        perror("unable to add shader. exceeding shader capacity.");
-        return;
-    }
-
-    ShaderGroup *curr = &ctx->shaderGroups[addIndex];
+    int i = ctx->shaderCount++;
+    ShaderEntry *curr = &ctx->shaderGroups[i];
     curr->shaderPath = path;
     curr->setupInitParams = setupInit ? setupInit : &defaultSetupInitParams;
     curr->setupDispatchParams = setupDispatch ? setupDispatch : &defaultSetupDispatchParams;
@@ -113,17 +107,71 @@ void addShader(
     loadShader(p, curr);
     free(p);
 
-    ctx->glProgs[addIndex] = createProgram(curr);
+    GLuint *prog = &curr->prog;
+    *prog = createProgram(curr);
+    int h = ctx->renderHeight, w = ctx->renderWidth;
 
-    const int h = ctx->renderHeight, w = ctx->renderWidth;
-    curr->setupInitParams(ctx->glProgs[addIndex], h, w, initParams);
+    if (role == ShaderRoleComposite) {
+        ctx->compositeIndex = i;
+        h = atomic_load(&ctx->winHeight);
+        w = atomic_load(&ctx->winWidth);
+    }
+
+    curr->setupInitParams(*prog, h, w, initParams);
 }
 
+
 void setupRenderContext(RenderContext* ctx, ProgArgs* args) {
-    ctx->renderWidth = args->width;
+    ctx->renderWidth = args->width; 
     ctx->renderHeight = args->height;
+    ctx->isResized = -1;
 
     setupWindow(ctx);
+    
+    glGenFramebuffers(NUM_SHADERS, ctx->fbos);
+    glGenTextures(NUM_SHADERS, ctx->fullTex);
+    for (int i = 0; i < NUM_SHADERS; i++) {
+        glBindTexture(GL_TEXTURE_2D, ctx->fullTex[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ctx->renderWidth, ctx->renderHeight,
+                     0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, ctx->fbos[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                                ctx->fullTex[i], 0);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            fprintf(stderr, "FBO %d incomplete\n", i);
+
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    CompositeShaderParams *params_composite = malloc(sizeof(CompositeShaderParams));
+
+    // bind texture ids
+    for (int i = 0; i < 4; i++)
+        params_composite->tex[i] = ctx->fullTex[i];
+    
+    addShader(ctx, "shaders/screen_coords.shader",
+        ShaderRolePattern,
+        NULL, NULL, NULL, NULL);    
+    addShader(ctx, "shaders/screen_coords.shader",
+        ShaderRolePattern,
+        NULL, NULL, NULL, NULL);    
+    addShader(ctx, "shaders/screen_coords.shader",
+        ShaderRolePattern,
+        NULL, NULL, NULL, NULL);    
+    addShader(ctx, "shaders/screen_coords.shader",
+        ShaderRolePattern,
+        NULL, NULL, NULL, NULL);
+    
+    addShader(ctx, "shaders/composite.shader",
+        ShaderRoleComposite,
+        NULL, NULL, NULL,
+        params_composite);
 }
 
 static void drawQuad(Quad* quad) {
@@ -132,11 +180,27 @@ static void drawQuad(Quad* quad) {
     glBindVertexArray(0);
 }
 
-void renderProgram(RenderContext* ctx, const int index, const double deltaTime) {
-    const GLuint currProg = ctx->glProgs[index];
-    const ShaderGroup* currGrp = &ctx->shaderGroups[index];
+void renderShaderProgram(RenderContext* ctx, const int i, const double deltaTime) {
+    const GLuint currProg = ctx->shaderGroups[i].prog;
+    const ShaderEntry* currGrp = &ctx->shaderGroups[i];
 
+    glBindFramebuffer(GL_FRAMEBUFFER, ctx->fbos[i]);
+    glViewport(0, 0, ctx->renderWidth, ctx->renderHeight);
     glUseProgram(currProg);
     currGrp->setupDispatchParams(currProg, deltaTime, currGrp->dispatchParams);
     drawQuad(&ctx->quad);
+    glFinish();
+}
+
+void renderCompositeProgram(RenderContext* ctx) {
+    const int i = ctx->compositeIndex;
+    const GLuint currProg = ctx->shaderGroups[i].prog;
+    const ShaderEntry* currGrp = &ctx->shaderGroups[i];
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, ctx->winWidth, ctx->winHeight);
+    glUseProgram(currProg);
+    currGrp->setupDispatchParams(currProg, 0.f, currGrp->dispatchParams);
+    drawQuad(&ctx->quad);
+    glFinish();
 }

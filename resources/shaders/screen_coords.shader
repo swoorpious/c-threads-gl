@@ -145,7 +145,7 @@ void main() {
         else if (mod(0.1 * uTime, 5.0) < 2.0) c = plaid_meltdown(p);
         else if (mod(0.1 * uTime, 5.0) < 3.0) c = sunlight_revealed(p);
         else if (mod(0.1 * uTime, 5.0) < 4.0) c = threesome(p);
-        else                                   c = digital_bacteria(p);
+        else                                  c = digital_bacteria(p);
 
         DrawVignette(c, crtUV);
         DrawScanline(c, uv);

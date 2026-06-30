@@ -7,7 +7,6 @@
 #include "render/render_core.h"
 
 #include "program_args.h"
-#include <stdatomic.h>
 #include "render_data.h"
 #include "shader_utils.h"
 #include "pthread.h"
@@ -30,8 +29,10 @@ typedef struct {
     _Atomic(int) isResized;
 
     // raw shader strings will be freed once all shaders are compiled
-    ShaderGroup shaderGroups[NUM_SHADERS];
-    GLuint glProgs[NUM_SHADERS];
+    int shaderCount;
+    int compositeIndex;
+    ShaderEntry shaderGroups[NUM_SHADERS + 1];
+    GLuint compositeProg;
     GLuint fbos[NUM_SHADERS];
     GLuint fullTex[NUM_SHADERS];
     /*
@@ -40,13 +41,13 @@ typedef struct {
      */
     GLuint previewTex[NUM_SHADERS];
     
-    GLuint compositeProg;
 } RenderContext;
 
 
 void addShader(
     RenderContext *ctx,
     const char *path,
+    ShaderRole role,
     // function pointers
     FuncSetupInitParams setupInit,
     FuncSetupDispatchParams setupDispatch,
@@ -54,7 +55,8 @@ void addShader(
     void *dispatchParams
 );
 void setupRenderContext(RenderContext *ctx, ProgArgs *args);
-void renderProgram(RenderContext *ctx, int index, double deltaTime);
+void renderShaderProgram(RenderContext *ctx, int i, double deltaTime);
+void renderCompositeProgram(RenderContext *ctx);
 
 
 #endif //RENDER_SETUP_H

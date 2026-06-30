@@ -30,7 +30,7 @@ static char* loadFile(const char* path) {
     return buffer;
 }
 
-static void parseShaderGroup(ShaderGroup* grp) {
+static void parseShaderGroup(ShaderEntry* grp) {
     if (grp->raw == NULL) {
         printf("[shader_utils] no raw data available to parse.\n");
         return;
@@ -97,7 +97,7 @@ static GLuint compileShader(GLenum type, const char* src) {
     return shader;
 }
 
-void loadShader(const char* shaderPath, ShaderGroup* grp) {
+void loadShader(const char* shaderPath, ShaderEntry* grp) {
     char* fileData = loadFile(shaderPath);
     printf("[loadShader] %s\n", fileData);
     grp->raw = fileData;
@@ -111,7 +111,7 @@ void loadShader(const char* shaderPath, ShaderGroup* grp) {
     free(grp->frag);
 }
 
-GLuint createProgram(const ShaderGroup* grp) {
+GLuint createProgram(const ShaderEntry* grp) {
     const GLuint program = glCreateProgram();
     const GLuint shad[2] = {grp->compiledVert, grp->compiledFrag};
 
@@ -140,5 +140,4 @@ void defaultSetupInitParams(unsigned int prog, int height, int width, void* para
 void defaultSetupDispatchParams(unsigned int prog, double deltaTime, void* params) {
     glUseProgram(prog);
     glUniform1f(glGetUniformLocation(prog, "uTime"), deltaTime);
-    
 }
